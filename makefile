@@ -1,22 +1,26 @@
-CC := gcc
+CC := g++
 CFLAGS := -g -Wall
 
 SRC := ./src
 BIN := ./bin
+INCLUDE := ./include
+TESTS := ./tests
+
 EXE := emulator
-
-debug: compile
-	gdb $(BIN)/$(EXE)
-
-run: compile
-	$(BIN)/$(EXE)
+TEST_EXE := emulator_test
 
 compile: *.o
 	$(CC) $^ -o $(BIN)/$(EXE)
 	mv *.o $(BIN)
 
-%.o: $(SRC)/%.c
-	$(CC) $(CFLAGS) $(INCLUDE) -c $^
+%.o: $(SRC)/%.cpp
+	$(CC) $(CFLAGS) -I$(INCLUDE) -c $^
+
+run: compile
+	$(BIN)/$(EXE)
+
+debug: compile
+	gdb $(BIN)/$(EXE)
 
 .PHONY: clean
 

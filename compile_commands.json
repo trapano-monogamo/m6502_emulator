@@ -1,0 +1,38 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-g",
+      "-Wall",
+      "-I./include",
+      "-c",
+      "src/cpu.cpp"
+    ],
+    "directory": "/home/chiara/dev/cpp/cpu_emulator_6502",
+    "file": "/home/chiara/dev/cpp/cpu_emulator_6502/src/cpu.cpp"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-g",
+      "-Wall",
+      "-I./include",
+      "-c",
+      "src/main.cpp"
+    ],
+    "directory": "/home/chiara/dev/cpp/cpu_emulator_6502",
+    "file": "/home/chiara/dev/cpp/cpu_emulator_6502/src/main.cpp"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-g",
+      "-Wall",
+      "-I./include",
+      "-c",
+      "src/memory.cpp"
+    ],
+    "directory": "/home/chiara/dev/cpp/cpu_emulator_6502",
+    "file": "/home/chiara/dev/cpp/cpu_emulator_6502/src/memory.cpp"
+  }
+]
