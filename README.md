@@ -50,7 +50,7 @@ Group One (cc=01 => idx=1)
   	    ORA 	AND 	EOR 	ADC 	STA 	LDA 	CMP 	SBC
 (in,X) 	01  	21 	    41 	    61 	    81 	    A1 	    C1 	    E1
 zp 	    05  	25 	    45 	    65 	    85 	    A5 	    C5 	    E5
-# 	    09  	29 	    49 	    69 	      	    A9 	    C9 	    E9
+#       09  	29      49      69              A9 	    C9 	    E9
 abs 	0D  	2D 	    4D 	    6D 	    8D 	    AD 	    CD 	    ED
 (in),Y 	11  	31 	    51 	    71 	    91 	    B1 	    D1 	    F1
 zp,X 	15  	35 	    55 	    75 	    95 	    B5 	    D5 	    F5
@@ -59,8 +59,9 @@ abs,X 	1D  	3D 	    5D 	    7D 	    9D 	    BD 	    DD 	    FD
 ```
 
 
-~ Group Two (cc=10 => idx=2) ~
+Group Two (cc=10 => idx=2)
 
+```txt
  aaa | opcode      bbb | addr mode
  ----+-------      ----+----------
  000 | ASL         000 | #im
@@ -79,31 +80,46 @@ A 				0A 		2A 		4A 		6A
 abs 			0E 		2E 		4E 		6E 		8E 		AE 		CE 		EE
 zp,X/zp,Y 		16 		36 		56 		76 		96 		B6 		D6 		F6
 abs,X/abs,Y 	1E 		3E 		5E 		7E 	  			BE 		DE 		FE
+```
 
 
-~ Group Three (cc=00 => idx=0) ~
+Group Three (cc=00 => idx=0)
 
- aaa | opcode      bbb | addr mode
- ----+-------      ----+----------
- 000 |             000 | #im
- 001 | BIT         001 | zp
- 010 | JMP         010 |
- 011 | JMP(abs)    011 | abs
- 100 | STY         100 |
- 101 | LDY         101 | zp,X
- 110 | CPY         110 |
- 111 | CPX         111 | abs,X
+aaa | opcode      
+---
+000 |             
+001 | BIT         
+010 | JMP         
+011 | JMP(abs)    
+100 | STY         
+101 | LDY         
+110 | CPY         
+111 | CPX         
 
-  		BIT 	JMP 	JMP() 	STY 	LDY 	CPY 	CPX
+bbb | addr mode
+---
+000 | #im
+001 | zp
+010 |
+011 | abs
+100 |
+101 | zp,X
+110 |
+111 | abs,X
+
+ |BIT|JMP|JMP()|STY|LDY|CPY|CPX
+---
 # 	  		  	  	  					A0 		C0 		E0
 zp 		24 	  	  				84 		A4 		C4 		E4
 abs 	2C 		4C 		6C 		8C 		AC 		CC 		EC
 zp,X 	  	  	  				94 		B4
 abs,X 	  	  	  	  					BC
+```
 
 
-~ Ungrouped ~
+Ungrouped
 
+```
 BPL	BMI	BVC	BVS	BCC	BCS BNE	BEQ
 10	30	50	70	90	B0 	D0	F0
 
@@ -118,6 +134,7 @@ CLC	SEC	CLI	SEI	TYA	CLV	CLD	SED
 
 TXA	TXS	TAX	TSX	DEX	NOP
 8A 	9A 	AA 	BA 	CA 	EA
+```
 
 
 
