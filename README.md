@@ -24,14 +24,15 @@ in the last two, least significant, bits.
 > Note that in a group, not all addressing modes are valid for all the instructions in that group.
 
 ```txt
-hex #XY               X    |  Y
-bits               7 6 5|4 3 2|1 0
-section name         a  |  b  | c
-range              0..7 |0..7 |0..3
+hex #XY
+bits               7 6 5 | 4 3 2 | 1 0
+section name       a a a | b b b | c c
+range              0..7  | 0..7  | 0..3
 ```
 
 > a and b are octal, c is binary
 
+---
 
 Group One (cc=01 => idx=1)
 
@@ -47,17 +48,18 @@ Group One (cc=01 => idx=1)
  110 | CMP         110 | abs,Y
  111 | SBC         111 | abs,X
 
-  	    ORA 	AND 	EOR 	ADC 	STA 	LDA 	CMP 	SBC
-(in,X) 	01  	21 	    41 	    61 	    81 	    A1 	    C1 	    E1
-zp 	    05  	25 	    45 	    65 	    85 	    A5 	    C5 	    E5
-#       09  	29      49      69              A9 	    C9 	    E9
-abs 	0D  	2D 	    4D 	    6D 	    8D 	    AD 	    CD 	    ED
-(in),Y 	11  	31 	    51 	    71 	    91 	    B1 	    D1 	    F1
-zp,X 	15  	35 	    55 	    75 	    95 	    B5 	    D5 	    F5
-abs,Y 	19  	39 	    59 	    79 	    99 	    B9 	    D9 	    F9
-abs,X 	1D  	3D 	    5D 	    7D 	    9D 	    BD 	    DD 	    FD
+        ORA AND EOR ADC STA LDA CMP SBC
+(in,X) 	01  21 	41 	61 	81 	A1 	C1 	E1
+zp      05  25 	45 	65 	85 	A5 	C5 	E5
+#       09  29  49  69  ..  A9  C9  E9
+abs     0D  2D 	4D 	6D 	8D 	AD 	CD 	ED
+(in),Y  11  31 	51 	71 	91 	B1 	D1 	F1
+zp,X    15  35 	55 	75 	95 	B5 	D5 	F5
+abs,Y   19  39 	59 	79 	99 	B9 	D9 	F9
+abs,X   1D  3D 	5D 	7D 	9D 	BD 	DD 	FD
 ```
 
+---
 
 Group Two (cc=10 => idx=2)
 
@@ -73,13 +75,13 @@ Group Two (cc=10 => idx=2)
  110 | DEC         110 |
  111 | INC         111 | abs,X
 
-   				ASL 	ROL 	LSR 	ROR 	STX 	LDX 	DEC 	INC
-# 	  	  		  	  	  								A2
-zp 				06 		26 		46 		66 		86 		A6 		C6 		E6
-A 				0A 		2A 		4A 		6A
-abs 			0E 		2E 		4E 		6E 		8E 		AE 		CE 		EE
-zp,X/zp,Y 		16 		36 		56 		76 		96 		B6 		D6 		F6
-abs,X/abs,Y 	1E 		3E 		5E 		7E 	  			BE 		DE 		FE
+            ASL ROL LSR ROR STX LDX DEC INC
+#           .. 	.. 	..	..	..	A2  ..  ..
+zp          06 	26 	46 	66 	86 	A6 	C6 	E6
+A           0A 	2A 	4A 	6A  ..  ..  ..  ..
+abs         0E 	2E 	4E 	6E 	8E 	AE 	CE 	EE
+zp,X/zp,Y   16 	36 	56 	76 	96 	B6 	D6 	F6
+abs,X/abs,Y 1E 	3E 	5E 	7E  ..  BE 	DE 	FE
 ```
 
 
@@ -97,12 +99,12 @@ Group Three (cc=00 => idx=0)
  110 | CPY         110 |
  111 | CPX         111 | abs,X
 
-  		BIT 	JMP 	JMP() 	STY 	LDY 	CPY 	CPX
-# 	  		  	  	  					A0 		C0 		E0
-zp 		24 	  	  				84 		A4 		C4 		E4
-abs 	2C 		4C 		6C 		8C 		AC 		CC 		EC
-zp,X 	  	  	  				94 		B4
-abs,X 	  	  	  	  					BC
+       BIT JMP jmp STY LDY CPY CPX
+#      ..   ..  ..  ..  A0 	C0 	E0
+zp     24   ..  ..  84  A4  C4  E4
+abs    2C   4C  6C  8C  AC  CC  EC
+zp,X   ..   ..  ..  94  B4  ..  ..
+abs,X  ..   ..  ..  ..  BC  ..  ..
 ```
 
 
@@ -125,7 +127,7 @@ TXA	TXS	TAX	TSX	DEX	NOP
 8A 	9A 	AA 	BA 	CA 	EA
 ```
 
-
+---
 
 The idea is to store the name of the instructions as keys in an
 unordered map whose key is going to be the group plus the "base opcode" (a + c),
@@ -133,31 +135,22 @@ and a group is characterised by a list of valid addressing modes (b),
 whose index in the list determines the value of (c).
 
 ```txt
-	enum addr_mode {
-			IM,
-			ZP,
-			ZPX,
-			ZPY,
-			AB,
-			ABX,
-			ABY,
-			IN,
-			INX,
-			INY,
-			IMPL,
-			REL,
-			INVALID
-	};
-	
-	addr_mode group_one[8] = {INX,ZP,IM,ABS,INY,ZPX,ABY,ABX};
-	addr_mode group_two[8] = {IM,ZP,IMPL,AB,INVALID,ZPX,INVALID,ABX};
-	addr_mode group_three[8] = {IM,ZP,INVALID,AB,INVALID,ZPX,INVALID,ABX};
-	
-	std::unordered_map<std::string, uint8_t> base_opcodes = {
-		{ "lda", 0b10100000 + 0b01 }, // <--- 0b10100000 is the 8bit number with aaa=101 and 0b01 is the 8bit (only least significat 2) with cc=01
-		...
-		{ "stx", 0b10000000 + 0b10 },
-	};
+enum addr_mode {
+    IM, ZP, ZPX, ZPY,
+    AB, ABX, ABY, IN,
+    INX, INY, IMPL, REL,
+    INVALID
+};
+
+addr_mode group_one[8] = {INX,ZP,IM,ABS,INY,ZPX,ABY,ABX};
+addr_mode group_two[8] = {IM,ZP,IMPL,AB,INVALID,ZPX,INVALID,ABX};
+addr_mode group_three[8] = {IM,ZP,INVALID,AB,INVALID,ZPX,INVALID,ABX};
+
+std::unordered_map<std::string, uint8_t> base_opcodes = {
+    { "lda", 0b10100000 + 0b01 }, // <--- 0b10100000 is the 8bit number with aaa=101 and 0b01 is the 8bit (only least significat 2) with cc=01
+    // ...
+    { "stx", 0b10000000 + 0b10 },
+};
 ```
 
 +----------------------------------------------------------------------------------------------------+
@@ -175,7 +168,7 @@ correct group's valid addressing modes is added to this base opcode, yielding th
 For example:
 
 ```asm
-	lda		#AA		; load 0xAA into register A
+lda		#AA		; load 0xAA into register A
 ```
 
 is constructed like this:
@@ -184,9 +177,9 @@ is constructed like this:
 - the '#' signifies immediate addressing mode
 
 ```cpp
-	byte base_opcode = base_opcodes[instr];
-	u32 idx = base_opcode & 0b00000011; // extract cc bits from base opcode
-	byte opcode = base_opcode + (index_of(AddrMode::IM, groups[idx]) << 2); // add bbb value which in binary is 000bbb00
+byte base_opcode = base_opcodes[instr];
+u32 idx = base_opcode & 0b00000011; // extract cc bits from base opcode
+byte opcode = base_opcode + (index_of(AddrMode::IM, groups[idx]) << 2); // add bbb value which in binary is 000bbb00
 ```
 
 Since the tables for the three groups do not include all instructions, some are left out, but they can
@@ -200,14 +193,14 @@ mode must have been invalid.
 For example:
 
 ```asm
-	bit  #AABB,X  ; error
+bit  #AABB,X  ; error
 ```
 
 should give a compilation error since BIT only accepts ZP or AB modes, and neither
 of the two are X indexed, while the following
 
 ```asm
-	bit  #AA      ; this compiles
+bit  #AA      ; this compiles
 ```
 
 should compile since this is normal ZP addressing.
