@@ -18,6 +18,13 @@
  * */
 
 
+enum TestEnum {
+	First = 0,
+	Second = 1,
+	Third = 2,
+};
+
+
 int main() {
 
 #ifdef TEST_MODE
@@ -29,6 +36,9 @@ int main() {
 	test_logic_instructions();
 
 #else
+
+	TestEnum t = (TestEnum)(5);
+	std::cout << t << std::endl;
 
 	CPU cpu;
 
