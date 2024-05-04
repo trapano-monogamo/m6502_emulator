@@ -153,12 +153,10 @@ std::unordered_map<std::string, uint8_t> base_opcodes = {
 };
 ```
 
-+----------------------------------------------------------------------------------------------------+
-|An exeption must be made for JMP indirect and JMP absolute, because even though they are the same   |
-|instruction with different addressing modes, this table treats them as two separate instructions.   |
-|Meaning in code, when the instruction encountered is a JMP, then the name of the instruction depends|
-|on the addressing mode, for example "jmp" for indirect and "jmp()" for absolute, or viceversa.      |
-+----------------------------------------------------------------------------------------------------+
+> An exeption must be made for JMP indirect and JMP absolute, because even though they are the same
+instruction with different addressing modes, this table treats them as two separate instructions.
+Meaning in code, when the instruction encountered is a JMP, then the name of the instruction depends
+on the addressing mode, for example "jmp" for indirect and "jmp()" for absolute, or viceversa.
 
 During compilation, the opcode of an instruction is constructued by first selecting
 the base opcode from the map (base instr + group). Then based, on the syntax, the correct
