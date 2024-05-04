@@ -4,10 +4,8 @@ CFLAGS := -g -Wall
 SRC := ./src
 BIN := ./bin
 INCLUDE := ./include
-TESTS := ./tests
 
 EXE := emulator
-TEST_EXE := emulator_test
 
 compile: *.o
 	$(CC) $^ -o $(BIN)/$(EXE)
@@ -15,6 +13,10 @@ compile: *.o
 
 %.o: $(SRC)/%.cpp
 	$(CC) $(CFLAGS) -I$(INCLUDE) -c $^
+
+test: CFLAGS += -DTEST_MODE
+test: compile
+	$(BIN)/$(EXE)
 
 run: compile
 	$(BIN)/$(EXE)

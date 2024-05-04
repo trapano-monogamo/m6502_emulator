@@ -1,34 +1,13 @@
 /** http://www.6502.org/users/obelisk/6502/index.html */
 
-#include <bitset>
-#include <iomanip>
 #include <iostream>
 #include "types.hpp"
 #include "cpu.hpp"
 #include "memory.hpp"
+
+#ifdef TEST_MODE
 #include "tests.hpp"
-
-struct AddResult {
-	short res;
-	byte carry : 1;
-	byte overflow : 1;
-};
-
-void bitwise_add(short x, short y) {
-	// std::cout << "before: " << std::bitset<16>(res.res) << ", C: " << (u16)res.carry << ", V: " << (u16)res.overflow << std::endl;
-	// res.res = (x ^ y) ^ ((x & y) << 1);
-	// std::cout << "after:  " << std::bitset<16>(res.res) << ", C: " << (u16)res.carry << ", V: " << (u16)res.overflow << std::endl;
-
-	std::cout
-		<< std::bitset<16>(x) << " +\n"
-		<< std::bitset<16>(y) << " =\n"
-		<< "----------------" << "\n"
-		<< std::bitset<16>(x+y) << "\n"
-		<< "----------------" << "\n"
-		<< std::bitset<16>((x&y) >> 7) << "\n"
-		<< std::endl;
-}
-
+#endif
 
 /**
  * ~ TODO ~
@@ -40,14 +19,29 @@ void bitwise_add(short x, short y) {
 
 
 int main() {
-	Mem memory;
+
+#ifdef TEST_MODE
+
+	// test_load_instructions();
+	// test_store_instructions();
+	// test_transfer_instructions();
+	// test_stack_instructions();
+	test_logic_instructions();
+
+#else
+
 	CPU cpu;
 
-	test_LDA(cpu, memory);
-	test_STA(cpu, memory);
+	byte reg =  0b10010110;
+	byte mask = 0b10001000;
+	for (int i=0; i<8; i++) {
+		std::cout
+			<< cpu.test_bit(reg, i) << ", "
+			<< cpu.test_bit(mask, i) << ", "
+			<< cpu.test_bit(reg & mask, i) << std::endl;;
+	}
 
-	RUN_TEST(LDA_IM_works);
-	RUN_TEST(LDA_ZP_works);
+#endif
 
     return 0;
 }
