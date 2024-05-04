@@ -49,14 +49,14 @@ Group One (cc=01 => idx=1)
  111 | SBC         111 | abs,X
 
         ORA AND EOR ADC STA LDA CMP SBC
-(in,X) 	01  21 	41 	61 	81 	A1 	C1 	E1
-zp      05  25 	45 	65 	85 	A5 	C5 	E5
+(in,X)  01  21  41  61  81  A1  C1  E1
+zp      05  25  45  65  85  A5  C5  E5
 #       09  29  49  69  ..  A9  C9  E9
-abs     0D  2D 	4D 	6D 	8D 	AD 	CD 	ED
-(in),Y  11  31 	51 	71 	91 	B1 	D1 	F1
-zp,X    15  35 	55 	75 	95 	B5 	D5 	F5
-abs,Y   19  39 	59 	79 	99 	B9 	D9 	F9
-abs,X   1D  3D 	5D 	7D 	9D 	BD 	DD 	FD
+abs     0D  2D  4D  6D  8D  AD  CD  ED
+(in),Y  11  31  51  71  91  B1  D1  F1
+zp,X    15  35  55  75  95  B5  D5  F5
+abs,Y   19  39  59  79  99  B9  D9  F9
+abs,X   1D  3D  5D  7D  9D  BD  DD  FD
 ```
 
 ---
@@ -76,12 +76,12 @@ Group Two (cc=10 => idx=2)
  111 | INC         111 | abs,X
 
             ASL ROL LSR ROR STX LDX DEC INC
-#           .. 	.. 	..	..	..	A2  ..  ..
-zp          06 	26 	46 	66 	86 	A6 	C6 	E6
-A           0A 	2A 	4A 	6A  ..  ..  ..  ..
-abs         0E 	2E 	4E 	6E 	8E 	AE 	CE 	EE
-zp,X/zp,Y   16 	36 	56 	76 	96 	B6 	D6 	F6
-abs,X/abs,Y 1E 	3E 	5E 	7E  ..  BE 	DE 	FE
+#           ..  ..  ..  ..  ..  A2  ..  ..
+zp          06  26  46  66  86  A6  C6  E6
+A           0A  2A  4A  6A  ..  ..  ..  ..
+abs         0E  2E  4E  6E  8E  AE  CE  EE
+zp,X/zp,Y   16  36  56  76  96  B6  D6  F6
+abs,X/abs,Y 1E  3E  5E  7E  ..  BE  DE  FE
 ```
 
 
@@ -100,31 +100,31 @@ Group Three (cc=00 => idx=0)
  111 | CPX         111 | abs,X
 
        BIT JMP jmp STY LDY CPY CPX
-#      ..   ..  ..  ..  A0 	C0 	E0
-zp     24   ..  ..  84  A4  C4  E4
-abs    2C   4C  6C  8C  AC  CC  EC
-zp,X   ..   ..  ..  94  B4  ..  ..
-abs,X  ..   ..  ..  ..  BC  ..  ..
+#      ..  ..  ..  ..  A0  C0  E0
+zp     24  ..  ..  84  A4  C4  E4
+abs    2C  4C  6C  8C  AC  CC  EC
+zp,X   ..  ..  ..  94  B4  ..  ..
+abs,X  ..  ..  ..  ..  BC  ..  ..
 ```
 
 
 Ungrouped
 
 ```txt
-BPL	BMI	BVC	BVS	BCC	BCS BNE	BEQ
-10	30	50	70	90	B0 	D0	F0
+BPL BMI BVC BVS BCC BCS BNE BEQ
+10  30  50  70  90  B0  D0  F0
 
-BRK	JSR	RTI	RTS
-00	20	40	60
+BRK JSR RTI RTS
+00  20  40  60
 
-PHP	PLP	PHA	PLA	DEY	TAY	INY	INX
-08 	28 	48 	68 	88 	A8 	C8 	E8
+PHP PLP PHA PLA DEY TAY INY INX
+08  28  48  68  88  A8  C8  E8
 
-CLC	SEC	CLI	SEI	TYA	CLV	CLD	SED
-18 	38 	58 	78 	98 	B8 	D8 	F8
+CLC SEC CLI SEI TYA CLV CLD SED
+18  38  58  78  98  B8  D8  F8
 
-TXA	TXS	TAX	TSX	DEX	NOP
-8A 	9A 	AA 	BA 	CA 	EA
+TXA TXS TAX TSX DEX NOP
+8A  9A  AA  BA  CA  EA
 ```
 
 ---
