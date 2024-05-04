@@ -85,30 +85,19 @@ abs,X/abs,Y 	1E 		3E 		5E 		7E 	  			BE 		DE 		FE
 
 Group Three (cc=00 => idx=0)
 
-aaa | opcode      
----
-000 |             
-001 | BIT         
-010 | JMP         
-011 | JMP(abs)    
-100 | STY         
-101 | LDY         
-110 | CPY         
-111 | CPX         
+```txt
+ aaa | opcode      bbb | addr mode
+ ----+-------      ----+----------
+ 000 |             000 | #im
+ 001 | BIT         001 | zp
+ 010 | JMP         010 |
+ 011 | JMP(abs)    011 | abs
+ 100 | STY         100 |
+ 101 | LDY         101 | zp,X
+ 110 | CPY         110 |
+ 111 | CPX         111 | abs,X
 
-bbb | addr mode
----
-000 | #im
-001 | zp
-010 |
-011 | abs
-100 |
-101 | zp,X
-110 |
-111 | abs,X
-
- |BIT|JMP|JMP()|STY|LDY|CPY|CPX
----
+  		BIT 	JMP 	JMP() 	STY 	LDY 	CPY 	CPX
 # 	  		  	  	  					A0 		C0 		E0
 zp 		24 	  	  				84 		A4 		C4 		E4
 abs 	2C 		4C 		6C 		8C 		AC 		CC 		EC
@@ -119,7 +108,7 @@ abs,X 	  	  	  	  					BC
 
 Ungrouped
 
-```
+```txt
 BPL	BMI	BVC	BVS	BCC	BCS BNE	BEQ
 10	30	50	70	90	B0 	D0	F0
 
@@ -143,6 +132,7 @@ unordered map whose key is going to be the group plus the "base opcode" (a + c),
 and a group is characterised by a list of valid addressing modes (b),
 whose index in the list determines the value of (c).
 
+```txt
 	enum addr_mode {
 			IM,
 			ZP,
@@ -168,6 +158,7 @@ whose index in the list determines the value of (c).
 		...
 		{ "stx", 0b10000000 + 0b10 },
 	};
+```
 
 +----------------------------------------------------------------------------------------------------+
 |An exeption must be made for JMP indirect and JMP absolute, because even though they are the same   |
@@ -183,16 +174,20 @@ correct group's valid addressing modes is added to this base opcode, yielding th
 (Invalid addressing mode should be treated as a compilation error, so it shouldn't be compiled at all)
 For example:
 
+```asm
 	lda		#AA		; load 0xAA into register A
+```
 
 is constructed like this:
 - instruction name is "lda"
 - lda is in group 1 which has cc=01, so index 0b01=1 in `groups`
 - the '#' signifies immediate addressing mode
 
+```cpp
 	byte base_opcode = base_opcodes[instr];
 	u32 idx = base_opcode & 0b00000011; // extract cc bits from base opcode
 	byte opcode = base_opcode + (index_of(AddrMode::IM, groups[idx]) << 2); // add bbb value which in binary is 000bbb00
+```
 
 Since the tables for the three groups do not include all instructions, some are left out, but they can
 be grouped into separate tables, so that when the instruction is not found in the base_opcodes map,
@@ -204,12 +199,16 @@ either the group or the addressing mode was incorrect, but since the group is fi
 mode must have been invalid.
 For example:
 
+```asm
 	bit  #AABB,X  ; error
+```
 
 should give a compilation error since BIT only accepts ZP or AB modes, and neither
 of the two are X indexed, while the following
 
+```asm
 	bit  #AA      ; this compiles
+```
 
 should compile since this is normal ZP addressing.
 
