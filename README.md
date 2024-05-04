@@ -68,7 +68,7 @@ Group Two (cc=10 => idx=2)
  ----+-------      ----+----------
  000 | ASL         000 | #im
  001 | ROL         001 | zp
- 010 | LSR         010 | acc (impl)
+ 010 | LSR         010 | A
  011 | ROR         011 | abs
  100 | STX         100 |
  101 | LDX         101 | zp,X
@@ -130,24 +130,27 @@ TXA TXS TAX TSX DEX NOP
 ---
 
 The idea is to store the name of the instructions as keys in an
-unordered map whose key is going to be the group plus the "base opcode" (a + c),
-and a group is characterised by a list of valid addressing modes (b),
+unordered map whose value entries are going to be the group and the "base opcode".
+A group is characterised by a list of valid addressing modes (b),
 whose index in the list determines the value of (c).
+
+> Note: implicit addressing mode isn't considered, since those operations are all in the ungrouped map and are not "addressing" anything.
 
 ```txt
 enum addr_mode {
     IM, ZP, ZPX, ZPY,
     AB, ABX, ABY, IN,
-    INX, INY, IMPL, REL,
+    INX, INY, A, REL,
     INVALID
 };
 
-addr_mode group_one[8] = {INX,ZP,IM,ABS,INY,ZPX,ABY,ABX};
-addr_mode group_two[8] = {IM,ZP,IMPL,AB,INVALID,ZPX,INVALID,ABX};
-addr_mode group_three[8] = {IM,ZP,INVALID,AB,INVALID,ZPX,INVALID,ABX};
+std::array<std::array<addr_mode, 8>, 3> groups = {
+    { IM, ZP, IM, AB, INY, ZPX, ABY, ABX }, // group one
+    // ...
+};
 
 std::unordered_map<std::string, uint8_t> base_opcodes = {
-    { "lda", 0b10100000 + 0b01 }, // <--- 0b10100000 is the 8bit number with aaa=101 and 0b01 is the 8bit (only least significat 2) with cc=01
+    { "lda", { 0b10100000, 0b01 } }, // <--- 0b10100000 is the 8bit number with aaa=101 and 0b01 is the 8bit (only least significat 2) with cc=01
     // ...
     { "stx", 0b10000000 + 0b10 },
 };
@@ -175,8 +178,8 @@ is constructed like this:
 - the '#' signifies immediate addressing mode
 
 ```cpp
-byte base_opcode = base_opcodes[instr];
-u32 idx = base_opcode & 0b00000011; // extract cc bits from base opcode
+byte base_opcode = base_opcodes[instr].first;
+u32 idx = base_opcodes[instr].second; // extract cc bits from base opcode
 byte opcode = base_opcode + (index_of(AddrMode::IM, groups[idx]) << 2); // add bbb value which in binary is 000bbb00
 ```
 

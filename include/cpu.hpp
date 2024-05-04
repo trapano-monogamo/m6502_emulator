@@ -27,8 +27,9 @@ struct CPU {
 
 
 	/** memory layout constants */
-	static constexpr u16 RESET_VECTOR	= 0xFFFC;
+	static constexpr u16 RESET_VECTOR	= 0xFFFC; // default reset position for PC
 	static constexpr u16 STACK			= 0x0100;
+	// the stack goes from 0x0100 to 0x01FF, but starts at 0x01FF and goes down
 
 	/** processor status switches */
 	static constexpr byte CARRY_MASK 				= 0b01000000;
@@ -40,7 +41,6 @@ struct CPU {
 	static constexpr byte NEGATIVE_MASK 			= 0b00000001;
 
 	/** instruction set */
-	static constexpr byte INS_JSR		= 0x20;
 
 	// load instructions
 	static constexpr byte INS_LDA_IM	= 0xA9;
@@ -126,6 +126,13 @@ struct CPU {
 	static constexpr byte INS_BIT_ZP	= 0x24;
 	static constexpr byte INS_BIT_AB	= 0x2C;
 
+	// jumps and calls
+	static constexpr byte INS_JMP_AB	= 0x4C;
+	static constexpr byte INS_JMP_IN	= 0x6C;
+	static constexpr byte INS_JSR_AB	= 0x20;
+	static constexpr byte INS_RTS		= 0x60;
+
+
 	/** fetch oeprations */
 	byte fetch_byte( i32& cycles, Mem& memory );
 	word fetch_word( i32& cycles, Mem& memory );
@@ -138,8 +145,14 @@ struct CPU {
 	void write_byte( i32& cycles, byte value, u16 addr, Mem& memory );
 	void write_word( i32& cycles, word value, u16 addr, Mem& memory );
 
+	/** stack push/pull operations */
+	void push_byte( i32& cycles, byte data, Mem& memory );
+	void push_word( i32& cycles, word data, Mem& memory );
+	byte pull_byte( i32& cycles, Mem& memory );
+	word pull_word( i32& cycles, Mem& memory );
+
 	/** execution */
-	void reset( Mem& memory );
+	void reset( Mem& memory, word pc = RESET_VECTOR );
 	u32 execute( Mem& memory, i32 cycles );
 
 	/** utility functions */

@@ -5,9 +5,9 @@
 #include <iostream>
 #include <iomanip>
 
-void CPU::reset( Mem& memory ) {
-	PC = 0xFFFC; // reset vector
-	SP = 0x00;   // stack: 0x0100 - 0x01FF
+void CPU::reset( Mem& memory, word pc ) {
+	PC = pc;
+	SP = 0xFF;
 	flags = 0x0;
 	A = X = Y = 0x0;
 	memory.initialize();
@@ -59,6 +59,38 @@ void CPU::write_word( i32& cycles, word value, u16 addr, Mem& memory ) {
 	// two write instructions
 	cycles -= 2;
 }
+
+// push/pull operations
+void CPU::push_byte( i32& cycles, byte value, Mem& memory ) {
+	write_byte(cycles, value, STACK + SP, memory);
+	SP--;
+	cycles--; // decrement of SP takes one cycle
+}
+
+void CPU::push_word( i32& cycles, word value, Mem& memory ) {
+	write_byte(cycles, value >> 8, STACK + SP, memory);
+	SP--;
+	write_byte(cycles, value & 0xFF, STACK + SP, memory);
+	SP--;
+	cycles--;
+}
+
+byte CPU::pull_byte( i32& cycles, Mem& memory ) {
+	SP++;
+	cycles--;
+	byte data = read_byte(cycles, STACK + SP, memory);
+	return data;
+}
+
+word CPU::pull_word( i32& cycles, Mem& memory ) {
+	SP++;
+	cycles--;
+	word data = read_word(cycles, STACK + SP, memory);
+	SP++;
+	cycles--;
+	return data;
+}
+
 
 u32 CPU::execute( Mem& memory, i32 cycles ) {
 
@@ -365,31 +397,25 @@ u32 CPU::execute( Mem& memory, i32 cycles ) {
 
 			case INS_PHA:
 			{
-				write_byte(cycles, A, STACK + SP, memory);
-				SP++;
-				cycles--;
+				push_byte(cycles, A, memory);
 			} break;
 
 			case INS_PLA:
 			{
-				SP--;
-				A = read_byte(cycles, STACK + SP, memory);
-				cycles -= 2; // idk where the 4th cycle comes from...
+				A = pull_byte(cycles, memory);
+				cycles--; // idk where the 4th cycle comes from...
 				set_register_status(A);
 			} break;
 
 			case INS_PHP:
 			{
-				write_byte(cycles, flags, STACK + SP, memory);
-				SP++;
-				cycles--;
+				push_byte(cycles, flags, memory);
 			} break;
 
 			case INS_PLP:
 			{
-				SP--;
-				flags = read_byte(cycles, STACK + SP, memory);
-				cycles -= 2; // idk where the 4th cycle comes from...
+				flags = pull_byte(cycles, memory);
+				cycles--; // idk where the 4th cycle comes from...
 			} break;
 
 			case INS_AND_IM:
@@ -637,24 +663,30 @@ u32 CPU::execute( Mem& memory, i32 cycles ) {
 				N = test_bit(mask, 7);
 			} break;
 
-			case INS_JSR:
+			case INS_JMP_AB:
 			{
-				/**
-				 * when a JSR instruction is encountered, the sub_addr is pushed
-				 * onto the stack (it's a stackframe containing the subrouting address),
-				 * and the PC is set to the subroutine address so the CPU executes from there.
-				 *
-				 * PC-1 is because when the routine calls the RTS instruction
-				 * (return from subroutine) it reads from the stack the value to set the PC to,
-				 * but it increments it by one to avoid repeating the JSR. Overall this means
-				 * that after the RTS instruction, the PC points to the instruction right after the JSR.
-				 * */
+				word addr = fetch_word(cycles, memory);
+				PC = addr;
+			} break;
+
+			case INS_JMP_IN:
+			{
+				// check the reference on compatibility with implementing a bug with this instruction
+				word addr = fetch_word(cycles, memory);
+				word target_addr = read_word(cycles, addr, memory);
+				PC = target_addr;
+			} break;
+
+			case INS_JSR_AB:
+			{
 				word sub_addr = fetch_word(cycles, memory);
-				// push PC-1 to stack
-				write_word(cycles, PC - 1, STACK + SP, memory);
-				SP += 2;
-				// jump
+				push_word(cycles, PC - 1, memory);
 				PC = sub_addr;
+			} break;
+
+			case INS_RTS:
+			{
+				PC = pull_word(cycles, memory);
 				cycles--;
 			} break;
 

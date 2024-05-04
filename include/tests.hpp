@@ -1237,8 +1237,8 @@ CFG_TEST(PHA_works) {
 	u32 expected_used_cycles = 3;
 	u32 used_cycles = cpu.execute(memory, expected_used_cycles);
 
-	EXPECT_EQ(cpu.SP, 0x01);
-	EXPECT_EQ(memory[cpu.STACK + cpu.SP - 0x01], cpu.A);
+	EXPECT_EQ(cpu.SP, 0xFE);
+	EXPECT_EQ(memory[cpu.STACK + cpu.SP + 0x01], cpu.A);
 	EXPECT_EQ(cpu.PC, 0xFFFD);
 	EXPECT_EQ(used_cycles, expected_used_cycles);
 }
@@ -1248,15 +1248,15 @@ CFG_TEST(PLA_works) {
 	Mem memory;
 	cpu.reset(memory);
 
-	memory[cpu.STACK] = 0x03;
-	cpu.SP = 0x01;
+	memory[cpu.STACK + cpu.SP] = 0x03;
+	cpu.SP--;
 	memory[0xFFFC] = CPU::INS_PLA;
 
 	u32 expected_used_cycles = 4;
 	u32 used_cycles = cpu.execute(memory, expected_used_cycles);
 
 	EXPECT_EQ(cpu.A, 0x03);
-	EXPECT_EQ(cpu.SP, 0x00);
+	EXPECT_EQ(cpu.SP, 0xFF);
 	// EXPECT_EQ(memory[cpu.STACK + cpu.SP], 0x03); // the stack location is not explicitly overwritten
 	EXPECT_EQ(cpu.PC, 0xFFFD);
 	EXPECT_EQ(used_cycles, expected_used_cycles);
@@ -1275,8 +1275,8 @@ CFG_TEST(PHP_works) {
 	u32 expected_used_cycles = 3;
 	u32 used_cycles = cpu.execute(memory, expected_used_cycles);
 
-	EXPECT_EQ(cpu.SP, 0x01);
-	EXPECT_EQ(memory[cpu.STACK + cpu.SP - 0x01], cpu.flags);
+	EXPECT_EQ(cpu.SP, 0xFE);
+	EXPECT_EQ(memory[cpu.STACK + cpu.SP + 0x01], cpu.flags);
 	EXPECT_EQ(cpu.PC, 0xFFFD);
 	EXPECT_EQ(used_cycles, expected_used_cycles);
 	EXPECT_FALSE(cpu.__unused);
@@ -1294,14 +1294,14 @@ CFG_TEST(PLP_works) {
 	Mem memory;
 	cpu.reset(memory);
 
-	memory[cpu.STACK] = 0b01001101;
-	cpu.SP = 0x01;
+	memory[cpu.STACK + cpu.SP] = 0b01001101;
+	cpu.SP = 0xFE;
 	memory[0xFFFC] = CPU::INS_PLP;
 
 	u32 expected_used_cycles = 4;
 	u32 used_cycles = cpu.execute(memory, expected_used_cycles);
 
-	EXPECT_EQ(cpu.SP, 0x00);
+	EXPECT_EQ(cpu.SP, 0xFF);
 	EXPECT_EQ(cpu.PC, 0xFFFD);
 	EXPECT_EQ(used_cycles, expected_used_cycles);
 	EXPECT_FALSE(cpu.__unused);
@@ -2075,6 +2075,91 @@ CFG_TEST(BIT_AB_negative_test_works) {
 	EXPECT_TRUE(cpu.N);
 }
 
+CFG_TEST(JMP_AB_works) {
+	CPU cpu;
+	Mem memory;
+	cpu.reset(memory);
+
+	memory[0xFFFC] = CPU::INS_JMP_AB;
+	memory[0xFFFD] = 0xAA;
+	memory[0xFFFE] = 0xBB;
+	memory[0xBBAA] = CPU::INS_LDA_IM;
+	memory[0xBBAB] = 0x03;
+
+	u32 expected_used_cycles = 5;
+	u32 used_cycles = cpu.execute(memory, expected_used_cycles);
+
+	EXPECT_EQ(cpu.A, 0x03); // unaltered A register
+	EXPECT_EQ(cpu.PC, 0xBBAC);
+	EXPECT_EQ(used_cycles, expected_used_cycles);
+}
+
+CFG_TEST(JMP_IN_works) {
+	CPU cpu;
+	Mem memory;
+	cpu.reset(memory);
+
+	memory[0xFFFC] = CPU::INS_JMP_IN;
+	memory[0xFFFD] = 0xAA;
+	memory[0xFFFE] = 0xBB;
+	memory[0xBBAA] = 0x42;
+	memory[0xBBAB] = 0x42;
+	memory[0x4242] = CPU::INS_LDA_IM;
+	memory[0x4243] = 0x03;
+
+	u32 expected_used_cycles = 7;
+	u32 used_cycles = cpu.execute(memory, expected_used_cycles);
+
+	EXPECT_EQ(cpu.A, 0x03); // unaltered A register
+	EXPECT_EQ(cpu.PC, 0x4244);
+	EXPECT_EQ(used_cycles, expected_used_cycles);
+}
+
+CFG_TEST(JSR_AB_works) {
+	CPU cpu;
+	Mem memory;
+	cpu.reset(memory);
+
+	memory[0xFFFC] = CPU::INS_JSR_AB;
+	memory[0xFFFD] = 0xAA;
+	memory[0xFFFE] = 0xBB;
+	memory[0xBBAA] = CPU::INS_LDA_IM;
+	memory[0xBBAB] = 0x03;
+
+	u32 expected_used_cycles = 8;
+	u32 used_cycles = cpu.execute(memory, expected_used_cycles);
+
+	EXPECT_EQ(cpu.A, 0x03); // unaltered A register
+	EXPECT_EQ(cpu.PC, 0xBBAC);
+	EXPECT_EQ(cpu.SP, 0xFD);
+	EXPECT_EQ(memory[cpu.STACK + cpu.SP + 0x01], 0xFE);
+	EXPECT_EQ(memory[cpu.STACK + cpu.SP + 0x02], 0xFF);
+	EXPECT_EQ(used_cycles, expected_used_cycles);
+}
+
+CFG_TEST(RTS_works) {
+	CPU cpu;
+	Mem memory;
+	cpu.reset(memory);
+
+	memory[0xFFFC] = CPU::INS_JSR_AB;
+	memory[0xFFFD] = 0xAA;
+	memory[0xFFFE] = 0xBB;
+	memory[0xBBAA] = CPU::INS_LDA_IM;
+	memory[0xBBAB] = 0x03;
+	memory[0xBBAC] = CPU::INS_RTS;
+
+	u32 expected_used_cycles = 14;
+	u32 used_cycles = cpu.execute(memory, expected_used_cycles);
+
+	EXPECT_EQ(cpu.A, 0x03); // unaltered A register
+	EXPECT_EQ(cpu.PC, 0xFFFE);
+	EXPECT_EQ(cpu.SP, 0xFF);
+	EXPECT_EQ(memory[cpu.STACK + cpu.SP - 0x01], 0xFE);
+	EXPECT_EQ(memory[cpu.STACK + cpu.SP], 0xFF);
+	EXPECT_EQ(used_cycles, expected_used_cycles);
+}
+
 
 
 void test_cyles() {
@@ -2202,4 +2287,11 @@ void test_logic_instructions() {
 	RUN_TEST(BIT_AB_positive_test_works);
 	RUN_TEST(BIT_ZP_negative_test_works);
 	RUN_TEST(BIT_AB_negative_test_works);
+}
+
+void test_jump_instructions() {
+	RUN_TEST(JMP_AB_works);
+	RUN_TEST(JMP_IN_works);
+	RUN_TEST(JSR_AB_works);
+	RUN_TEST(RTS_works);
 }

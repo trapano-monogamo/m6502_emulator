@@ -29,27 +29,39 @@ int main() {
 
 #ifdef TEST_MODE
 
-	// test_load_instructions();
-	// test_store_instructions();
-	// test_transfer_instructions();
-	// test_stack_instructions();
+	test_load_instructions();
+	test_store_instructions();
+	test_transfer_instructions();
+	test_stack_instructions();
 	test_logic_instructions();
+	test_jump_instructions();
 
 #else
 
-	TestEnum t = (TestEnum)(5);
-	std::cout << t << std::endl;
-
 	CPU cpu;
+	Mem memory;
+	cpu.reset(memory, 0xFF00);
 
-	byte reg =  0b10010110;
-	byte mask = 0b10001000;
-	for (int i=0; i<8; i++) {
-		std::cout
-			<< cpu.test_bit(reg, i) << ", "
-			<< cpu.test_bit(mask, i) << ", "
-			<< cpu.test_bit(reg & mask, i) << std::endl;;
-	}
+	memory[0xAA00] = 0xFF;
+	memory[0xAA01] = 0xFF;
+
+	cpu.inspect();
+	memory.inspect(0xAA00);
+
+	// clear memory 16 bit
+	memory[0xFF00] = CPU::INS_LDA_IM;
+	memory[0xFF01] = 0x00;
+	memory[0xFF02] = CPU::INS_STA_AB;
+	memory[0xFF03] = 0x00;
+	memory[0xFF04] = 0xAA;
+	memory[0xFF05] = CPU::INS_STA_AB;
+	memory[0xFF06] = 0x01;
+	memory[0xFF07] = 0xAA;
+
+	cpu.execute(memory, 10);
+
+	cpu.inspect();
+	memory.inspect(0xAA00);
 
 #endif
 
