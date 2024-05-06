@@ -2,7 +2,12 @@
 
 #include <unordered_map>
 #include <array>
-#include "types.hpp"
+
+typedef unsigned char 	byte;
+typedef unsigned short 	word;
+typedef unsigned short	u16;
+typedef unsigned int 	u32;
+typedef int 			i32;
 
 enum AddrMode {
 		IM,			// immediate
@@ -84,6 +89,13 @@ const std::unordered_map<const char*, byte> ungrouped_base_opcodes = {
 	{ "php", 0x08 }, { "plp", 0x28 }, { "pha", 0x48 }, { "pla", 0x68 }, { "dey", 0x88 }, { "tay", 0xA8 }, { "iny", 0xC8 }, { "inx", 0xE8 },
 	{ "cls", 0x18 }, { "sec", 0x38 }, { "cli", 0x58 }, { "sei", 0x78 }, { "tya", 0x98 }, { "clv", 0xB8 }, { "cld", 0xD8 }, { "sed", 0xF8 },
 	{ "txa", 0x8A }, { "txs", 0x9A }, { "tax", 0xAA }, { "tsx", 0xBA }, { "dex", 0xCA }, { "nop", 0xEA },
+};
+
+std::array<const char*, 56> instruction_mnemonics = {
+	"adc", "and", "asl", "bcc", "bcs", "beq", "bit", "bmi", "bne", "bpl", "brk", "bvc", "bvs", "clc",
+	"cld", "cli", "clv", "cmp", "cpx", "cpy", "dec", "dex", "dey", "eor", "inc", "inx", "iny", "jmp",
+	"jsr", "lda", "ldx", "ldy", "lsr", "nop", "ora", "pha", "php", "pla", "plp", "rol", "ror", "rti",
+	"rts", "sbc", "sec", "sed", "sei", "sta", "stx", "sty", "tax", "tay", "tsx", "txa", "txs", "tya",
 };
 
 // std::array<byte, 151> calculate_valid_opcodes() {

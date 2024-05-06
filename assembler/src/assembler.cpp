@@ -45,11 +45,9 @@
  *
  * */
 
-
-#include "assembler/assembler.hpp"
-#include "assembler/lexer.hpp"
-#include "assembler/parser.hpp"
-#include "assembler/compiler.hpp"
+#include "assembler.hpp"
+#include "lexer.hpp"
+#include "parser.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -65,6 +63,7 @@
 // #include <cstddef>
 
 /* ---------------------------------------------- */
+
 
 /*
 
@@ -206,7 +205,7 @@ void assemble(const char* filepath) {
 	std::stringstream src_string{};
 	std::string line{};
 	while (std::getline(code, line)) {
-		src_string << line;
+		src_string << line << std::endl;
 	}
 
 	lex(src_string.str());

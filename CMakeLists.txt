@@ -12,5 +12,5 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 project(emulator)
 
 add_subdirectory(emulator)
-# add_subdirectory(assembler)
+add_subdirectory(assembler)
 add_subdirectory(demo)
