@@ -12,8 +12,11 @@ of an instruction at compile time (or find another way of checking existance)
 
 ## Assembler
 
-https://www.masswerk.at/6502/6502_instruction_set.html#layout
-https://llx.com/Neil/a2/opcodes.html
+Useful websites I used to build these tables
+
+- https://www.masswerk.at/6502/6502_instruction_set.html#layout
+
+- https://llx.com/Neil/a2/opcodes.html
 
 
 ### How the opcodes are structured
@@ -194,15 +197,27 @@ mode must have been invalid.
 For example:
 
 ```asm
-bit  #AABB,X  ; error
+bit  $AABB,X  ; error
 ```
 
 should give a compilation error since BIT only accepts ZP or AB modes, and neither
 of the two are X indexed, while the following
 
 ```asm
-bit  #AA      ; this compiles
+bit  $AA      ; this compiles
 ```
 
 should compile since this is normal ZP addressing.
 
+
+### How the assembler compiles code
+
+#### Lexer
+
+The text is scanned and tokenised following the lexical rules of the assembly. Each line of code can present
+a label, which is then assigned to an address according to a table (*), or an instruction, which is followed
+by an argument, which in turn contains information about the addressing mode used and the type of argument.
+
+#### Parser and AST
+
+#### Compilation

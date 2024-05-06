@@ -12,6 +12,12 @@
   "output": "emulator/CMakeFiles/emulator.dir/src/memory.cpp.o"
 },
 {
+  "directory": "/home/chiara/dev/cpp/cpu_emulator_6502/build/emulator/tests",
+  "command": "/usr/bin/c++  -I/home/chiara/dev/cpp/cpu_emulator_6502/emulator/tests/../include -I/home/chiara/dev/cpp/cpu_emulator_6502/emulator/include -Wall -Wextra -g -O0 -std=gnu++20 -o CMakeFiles/emulator_tests.dir/tests.cpp.o -c /home/chiara/dev/cpp/cpu_emulator_6502/emulator/tests/tests.cpp",
+  "file": "/home/chiara/dev/cpp/cpu_emulator_6502/emulator/tests/tests.cpp",
+  "output": "emulator/tests/CMakeFiles/emulator_tests.dir/tests.cpp.o"
+},
+{
   "directory": "/home/chiara/dev/cpp/cpu_emulator_6502/build/demo",
   "command": "/usr/bin/c++  -I/home/chiara/dev/cpp/cpu_emulator_6502/demo/../emulator/include -I/home/chiara/dev/cpp/cpu_emulator_6502/emulator/include -Wall -Wextra -g -O0 -o CMakeFiles/demo.dir/src/main.cpp.o -c /home/chiara/dev/cpp/cpu_emulator_6502/demo/src/main.cpp",
   "file": "/home/chiara/dev/cpp/cpu_emulator_6502/demo/src/main.cpp",
