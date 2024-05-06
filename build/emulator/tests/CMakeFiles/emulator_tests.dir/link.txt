@@ -1,1 +1,0 @@
-/usr/bin/c++ -Wall -Wextra -g -O0 CMakeFiles/emulator_tests.dir/tests.cpp.o -o emulator_tests  ../libemulator.a 
