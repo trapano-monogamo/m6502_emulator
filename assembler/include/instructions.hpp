@@ -97,13 +97,3 @@ std::array<const char*, 56> instruction_mnemonics = {
 	"jsr", "lda", "ldx", "ldy", "lsr", "nop", "ora", "pha", "php", "pla", "plp", "rol", "ror", "rti",
 	"rts", "sbc", "sec", "sed", "sei", "sta", "stx", "sty", "tax", "tay", "tsx", "txa", "txs", "tya",
 };
-
-// std::array<byte, 151> calculate_valid_opcodes() {
-// 	std::array<byte,151> res{};
-// 	int i{};
-// 	for (auto entry : base_opcodes) {
-// 		res[i] = entry.second.first;
-// 		i++;
-// 	}
-// }
-// constexpr std::array<byte, 151> valid_opcodes = calculate_valid_opcodes();

@@ -4,30 +4,7 @@
 #include <array>
 #include <string>
 #include <iostream>
-#include <vector>
 #include <algorithm>
-
-struct Token {
-	// enum Type {
-	// 	LABEL,			// subroutines and jump locations
-	// 	INSTRUCTION,	// instructions
-	// 	OPERAND,		// arguments
-	// 	SYMBOL,			// for constants
-	// 	OPERATOR, 		// they act on an rvalue and an lvalue (=,+,-,*,/)
-	// 	SPECIFIER,		// '.' for directives, ':' for labels, ',' for addressing modes, '$' and '#' and ''' for literals
-	// 	NONE
-	// } type;
-	enum Type {
-		LABEL,			// subroutines and jump locations
-		INSTRUCTION,	// instructions
-		OPERAND,		// arguments
-		SYMBOL,			// for constants
-		DIRECTIVE,
-		EQUAL_SIGN,
-		NONE
-	} type;
-	std::string value;
-};
 
 char delimiters[] = { ' ', '\t', '\n', ':', '=' };
 // char operators[] = { '=', '+', '*', '-', '/' };
@@ -38,20 +15,32 @@ std::ostream& operator<<(std::ostream& out, Token t) {
 	switch (t.type) {
 		case Token::Type::LABEL:
 			s_type = "LABEL"; break;
+
 		case Token::Type::INSTRUCTION:
 			s_type = "INSTRUCTION"; break;
+
 		case Token::Type::OPERAND:
 			s_type = "OPERAND"; break;
+
 		case Token::Type::SYMBOL:
 			s_type = "SYMBOL"; break;
+
 		case Token::Type::DIRECTIVE:
-			s_type = "SYMBOL"; break;
+			s_type = "DIRECTIVE"; break;
+
+		case Token::Type::EQUAL_SIGN:
+			s_type = "EQUAL_SIGN"; break;
+
 		default:
 			s_type = "NONE"; break;
 	}
 
-	out << "{ " << s_type << ", " << t.value << " }";
+	out << "{ " << s_type << ", '" << t.value << "' }";
 	return out;
+}
+
+bool operator==(Token& a, Token&b) {
+	return a.type == b.type && a.value == b.value;
 }
 
 bool is_delimiter(char c) {
@@ -60,15 +49,16 @@ bool is_delimiter(char c) {
 	return false;
 }
 
-void lex(const std::string& input) {
+std::vector<Token> lex(const std::string& input) {
 	std::vector<Token> tokens{};
 	std::string current_token{};
 	Token::Type current_type = Token::Type::NONE;
 
 	int line_number = 0;
 	bool comment = false;
+	bool expects_operand = false;
 
-	// WHAT THE FUCK IS HAPPENING? THIS SHOULDN'T BE SO HARD... i'm tired
+	// WHAT THE HELL IS HAPPENING? THIS SHOULDN'T BE SO HARD... i'm tired
 	for (char c : input) {
 		if (c == ';') comment = true;
 
@@ -76,35 +66,62 @@ void lex(const std::string& input) {
 			if (comment) continue;
 			else current_token += c;
 		} else {
-			// check which delimiter has been encountered
+
 			if (c == '\n') {
 				line_number++;
 				comment = false; // finish the possible comment
 			}
 
-			// if the token is empty, skip to the next
-			if (current_token.empty()) continue;
-
-			// infer token type
-			if (current_token == "=") {
-				tokens.at(tokens.size() - 1).type = Token::Type::SYMBOL;
-			} else if (c == ':') {
-				current_type = Token::Type::LABEL;
-			} else if (current_token[0] == '.') {
-				current_type = Token::Type::DIRECTIVE;
-			} else if (std::find(instruction_mnemonics.begin(), instruction_mnemonics.end(), current_token) != nullptr) {
-				current_type = Token::Type::INSTRUCTION;
-			} else {
+			if (expects_operand) {
 				current_type = Token::Type::OPERAND;
 			}
 
-			tokens.push_back(Token{ current_type, current_token });
-			current_token.clear();
+			if (c == '=') {
+				if (!current_token.empty()) {
+					tokens.push_back(Token{ Token::Type::SYMBOL, current_token });
+					current_token.clear();
+				}
+				current_type = Token::Type::EQUAL_SIGN;
+				current_token = "=";
+			}
+			if (c == ':') {
+				current_type = Token::Type::LABEL;
+			}
+			if (current_token.find('.') != std::string::npos) {
+				current_type = Token::Type::DIRECTIVE;
+				expects_operand = true;
+			}
+			if (std::find(instruction_mnemonics.begin(), instruction_mnemonics.end(), current_token) != instruction_mnemonics.end()) {
+				current_type = Token::Type::INSTRUCTION;
+				expects_operand = true;
+			}
+
+			if (current_type == Token::Type::NONE && expects_operand) {
+				current_type = Token::Type::OPERAND;
+				expects_operand = false;
+			}
+
+			if (!current_token.empty()) {
+				tokens.push_back(Token{ current_type, current_token });
+				current_token.clear();
+			}
+
 			current_type = Token::Type::NONE;
 		}
 	}
 
+	// second pass because I can't be bothered to fix the previous loop for now...
+	Token* prev = nullptr;
 	for (auto& t : tokens) {
-		std::cout << " " << t << " " << std::endl;
+		if (t.value == "=" && prev != nullptr) {
+			prev->type = Token::Type::SYMBOL;
+			t.type = Token::Type::EQUAL_SIGN;
+		}
+		prev = &t;
 	}
+
+	// for (auto& t : tokens)
+	// 	std::cout << " " << t << " " << std::endl;
+
+	return tokens;
 }

@@ -14,6 +14,8 @@ main:
 loop:	sta	$00,x
 	inx
 	bvc	loop	; write accumulator up to $0F
-	rst
+	rts
+
+sub:	.org	VAR	; something something
 
 end:	; well... the program will just carry on reading whatever is in memory, and it will probably make a mess

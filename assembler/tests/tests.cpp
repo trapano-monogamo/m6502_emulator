@@ -1,5 +1,5 @@
 #include "tests.hpp"
 
 int main() {
-	RUN_TEST(first_test);
+	RUN_TEST(lexer_test);
 }
