@@ -1,198 +1,51 @@
-/* ~ TODO ~
- * Consider adding a byte size for the operand in the tables containing the opcodes.
- *
- * In the AST, a label could have the contained instructions as children, and an instruction
- * could have its operand and addressing mode as children.
- * The root of the tree is an abstract entry point, the first children will be the first instruction/label
- * encountered, and it will be the first byte of the compiled program.
- *
- *
- * To compile the program, traverse the AST to order the instructions, and then compose the program
- * by substituting the opcodes, label addresses and operand numerical values.
- *
- * In the first pass, determine the amount of bytes that each node occupies:
- * - an instruction occupies one byte for the opcode plus the bytes the operand takes
- *   - the number of bytes occupied by the operand is determined by the addressing mode
- * - a label occupies the total number of bytes occupied by each instruction and its operand
- *
- * So an ASTNode should hold a token, a size attribute, a vector of children and maybe a pointer to its parent
- *
- * 		struct ASTNode {
- * 			ASTNode* parent;
- * 			Token token;
- * 			size_t byte_size;
- * 			std::vector<ASTNode> children;
- * 		};
- *
- * In the second pass, put the program together aligning each node and check for compilation errors.
- * Having determined the size of each node, traverse the AST top to bottom and set each byte of the program to the correct :
- * - assign an address to each label encountered
- *   - this should involve knowing where the program will be put in memory
- *     to apply the correct offset to each label's address
- *   - subroutines should be put one after the other just as encountered during the traversal of the AST
- *     so the actual address of the label should be the index of the byte reached in the traversal plus
- *     the offset of the program
- *   - to substitute the correct address when calling a subroutine, build an unordered_map that assigns
- *     this calculated address to the label, and when the same label is encountered as an operand, substitute
- *     the address
- * - when an instruction is encountered, build the opcode from the tables and put it in the program followed by its operand
- *   - the operand must be stripped of its addressing mode identifiers and parsed to a byte or a sequence of two bytes
- * (!) if an implied addressing mode instruction has children, there's an error
- * (!) if an instruction that doesn't support implied addressing mode doesn't have children, there's an error
- * (!) if the size of an instruction's operand doesn't match the size expected by the addressing mode, there's an error
- * (!) if the operand of a JMP/JSR instruction isn't present in the table of subroutines there's an error
- * (!) if an instruction's mnemonic isn't present in any of the tables (so the opcode couldn't be constructed), there's an error
- *
- * */
-
 #include "assembler.hpp"
-#include "lexer.hpp"
-#include "parser.hpp"
+#include "instructions.hpp"
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <string>
-
-// #include <cctype>
-// #include <ostream>
-// #include <string>
-// #include <vector>
-// #include <algorithm>
-// #include <iterator>
-// #include <cstddef>
-
-/* ---------------------------------------------- */
+#include <algorithm>
 
 
-/*
+/* useful implementations */
 
-struct ASTNode {
-	ASTNode* parent;
-	Token token;
-	size_t byte_size;
-	std::vector<ASTNode> children;
-};
 
-void trim_comment(std::string& line) {
-	std::size_t pos = line.find(';');
-	if (pos != std::string::npos) {
-		line.erase(pos);
-	}
-}
+std::ostream& operator<<(std::ostream& out, Token t) {
+	std::string s_type{};
+	switch (t.type) {
+		case Token::Type::LABEL:
+			s_type = "LABEL"; break;
 
-void replace_spaces(std::string& line) {
-	std::replace(line.begin(), line.end(), ' ', '\t');
-}
+		case Token::Type::INSTRUCTION:
+			s_type = "INSTRUCTION"; break;
 
-void refine_tokens(std::vector<Token>& line) {
-	bool has_label = false;
+		case Token::Type::OPERAND:
+			s_type = "OPERAND"; break;
 
-	int i = 0;
-	for (auto& token : line) {
+		case Token::Type::SYMBOL:
+			s_type = "SYMBOL"; break;
 
-		if (i == 0 && token.value.find(':') != std::string::npos) {
-			has_label = true;
-			token.type = Token::Type::LABEL;
-		} else if ((i == 0 && !has_label) || (i == 1 && has_label)) {
-			token.type = Token::Type::INSTRUCTION;
-		} else if (i != 0) {
-			token.type = Token::Type::OPERAND;
-		}
+		case Token::Type::DIRECTIVE:
+			s_type = "DIRECTIVE"; break;
 
-		i++;
-	}
-}
+		case Token::Type::EQUAL_SIGN:
+			s_type = "EQUAL_SIGN"; break;
 
-std::vector<Token> tokenize_line(std::string line) {
-	std::vector<Token> tokens;
-
-	std::string delimiter = "\t";
-	line += delimiter;
-
-	size_t pos = 0;
-	std::string token;
-	while ((pos = line.find(delimiter)) != std::string::npos) {
-		token = line.substr(0, pos);
-		if (!token.empty()) {
-			std::transform(token.begin(), token.end(), token.begin(), [](unsigned char c){ return std::tolower(c); });
-			tokens.push_back(Token{ .type = Token::Type::NONE, .value = token, .addr_mode = AddrMode::INVALID });
-		}
-		line.erase(0, pos + delimiter.length());
+		default:
+			s_type = "NONE"; break;
 	}
 
-	refine_tokens(tokens);
-
-	return tokens;
+	out << "{ " << s_type << ", '" << t.value << "' }";
+	return out;
 }
 
-void compile(const std::vector<Token>& tokens) {
-	std::unordered_map<std::string, word> subroutines;
-
-	ASTNode root = ASTNode{
-		.parent = nullptr,
-		.token = Token{},
-		.byte_size = 0,
-		.children = std::vector<ASTNode>(),
-	};
-
-	ASTNode* current = &root;
-
-	for (const Token& token : tokens) {
-		switch (token.type) {
-			case Token::Type::LABEL:
-			{
-				if (current->parent != nullptr) {
-					if (current->parent->token.type == Token::Type::LABEL) {
-						std::cout << "Label in a label..." << std::endl;
-						exit(-1);
-					}
-				}
-				subroutines.insert({token.value, 0x0000});
-				current->children.push_back(ASTNode{
-							.parent = current,
-							.token = token,
-							.byte_size = 0,
-							.children = std::vector<ASTNode>()
-						});
-				current = &(current->children[current->children.size() - 1]);
-			} break;
-			case Token::Type::INSTRUCTION:
-			{
-				current->children.push_back(ASTNode{
-							.parent = current,
-							.token = token,
-							.byte_size = 0,
-							.children = std::vector<ASTNode>()
-						});
-				if (token.value == "rts" || token.value == "rti") {
-					if (current->parent != nullptr && current->parent->parent != nullptr) {
-						current = current->parent->parent;
-					}
-				} else {
-					current = &(current->children[current->children.size() - 1]);
-				}
-			} break;
-			case Token::Type::OPERAND:
-			{
-				// set addressing mode
-				current->children.push_back(ASTNode{
-							.parent = current,
-							.token = token,
-							.byte_size = 0,
-							.children = std::vector<ASTNode>()
-						});
-			} break;
-			default:
-			{
-				std::cout << "Fell through default..." << std::endl;
-				exit(-1);
-			} break;
-		}
-	}
+bool operator==(Token& a, Token&b) {
+	return a.type == b.type && a.value == b.value;
 }
 
-*/
+
+/* ASSEMBLER */
+
 
 void assemble(const char* filepath) {
 	std::ifstream code(filepath);
@@ -209,25 +62,149 @@ void assemble(const char* filepath) {
 	}
 
 	lex(src_string.str());
+}
 
-	// std::vector<Token> tokens{};
 
-	// std::string line;
-	// while (std::getline(code, line)) {
-	// 	trim_comment(line);
-	// 	replace_spaces(line);
-	// 	auto tokenized = tokenize_line(line);
+/* LEXER */
 
-	// 	tokens.insert(
-	// 		tokens.end(),
-	// 		std::make_move_iterator(tokenized.begin()),
-	// 		std::make_move_iterator(tokenized.end())
-	// 	);
-	// }
 
-	// for (auto& t : tokens) {
-	// 	std::cout << t << std::endl;
-	// }
+char delimiters[] = { ' ', '\t', '\n', ':', '=' };
 
-	// compile(tokens);
+bool is_delimiter(char c) {
+	for (unsigned int i=0; i<sizeof(delimiters); i++)
+		if (c == delimiters[i]) return true;
+	return false;
+}
+
+lexer_results lex(const std::string& input) {
+	std::vector<Token> tokens{};
+	std::string current_token{};
+	Token::Type current_type = Token::Type::NONE;
+
+	int line_number = 0;
+	bool comment = false;
+	bool expects_operand = false;
+
+	// WHAT THE HELL IS HAPPENING? THIS SHOULDN'T BE SO HARD... i'm tired
+	for (char c : input) {
+		if (c == ';') comment = true;
+
+		if (!is_delimiter(c)) {
+			if (comment) continue;
+			else current_token += c;
+		} else {
+
+			if (c == '\n') {
+				line_number++;
+				comment = false; // finish the possible comment
+			}
+
+			if (expects_operand) {
+				current_type = Token::Type::OPERAND;
+			}
+
+			if (c == '=') {
+				if (!current_token.empty()) {
+					tokens.push_back(Token{ Token::Type::SYMBOL, current_token });
+					current_token.clear();
+				}
+				current_type = Token::Type::EQUAL_SIGN;
+				current_token = "=";
+			}
+			if (c == ':') {
+				current_type = Token::Type::LABEL;
+			}
+			if (current_token.find('.') != std::string::npos) {
+				current_type = Token::Type::DIRECTIVE;
+				expects_operand = true;
+			}
+			if (std::find(instruction_mnemonics.begin(), instruction_mnemonics.end(), current_token) != instruction_mnemonics.end()) {
+				current_type = Token::Type::INSTRUCTION;
+				expects_operand = true;
+			}
+
+			if (current_type == Token::Type::NONE && expects_operand) {
+				current_type = Token::Type::OPERAND;
+				expects_operand = false;
+			}
+
+			if (!current_token.empty()) {
+				tokens.push_back(Token{ current_type, current_token });
+				current_token.clear();
+			}
+
+			current_type = Token::Type::NONE;
+		}
+	}
+
+	// second pass because I can't be bothered to fix the previous loop for now...
+	Token* prev = nullptr;
+	for (auto& t : tokens) {
+		if (t.value == "=" && prev != nullptr) {
+			prev->type = Token::Type::SYMBOL;
+			t.type = Token::Type::EQUAL_SIGN;
+		}
+		prev = &t;
+	}
+
+	return { tokens, build_ast(tokens) };
+}
+
+
+/* PARSER */
+
+
+ASTNode build_ast(std::vector<Token>& tokens) {
+	// default location of the program in memory. The .org directive overrites this default
+	word zero_addr = 0x0000;
+	std::unordered_map<std::string, word> subroutines{};
+
+	/* !!! TODO: consider removing the EQUAL_SIGN tokens from the results of the
+	 *           lexer. They are necessary to recognize assignments, but once the
+	 *           token type is deduced, a symbol already expects an operand, so the
+	 *           equal sign doesn't add any information
+	 */
+
+	ASTNode root{};
+	ASTNode* current = &root;
+
+	using ty = Token::Type;
+	for (auto& t : tokens) {
+		switch (t.type) {
+
+			// mmmh... look up more about directives
+			case ty::DIRECTIVE:
+			{
+				if (t.value == ".org") {
+					// here the assembler should act as an interpreter
+					// and directly read the operand to set the zero address
+				}
+			} break;
+
+			case ty::LABEL:
+			{
+				current->children.push_back(ASTNode{current, t, 0, {}});
+				current = &current->children[0];
+				// subroutines look up table
+				// -- code --
+			} break;
+
+			case ty::SYMBOL:
+			{} break;
+
+			case ty::EQUAL_SIGN:
+			{} break;
+
+			case ty::OPERAND:
+			{} break;
+
+			case ty::INSTRUCTION:
+			{} break;
+
+			default: // ty::NONE
+			{
+				std::cout << "Unknown token in AST build process" << std::endl;
+			} break;
+		}
+	}
 }

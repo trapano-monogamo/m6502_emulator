@@ -1,13 +1,9 @@
 #pragma once
 
+#include "types.hpp"
+
 #include <unordered_map>
 #include <array>
-
-typedef unsigned char 	byte;
-typedef unsigned short 	word;
-typedef unsigned short	u16;
-typedef unsigned int 	u32;
-typedef int 			i32;
 
 enum AddrMode {
 		IM,			// immediate

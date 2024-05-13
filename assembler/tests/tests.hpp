@@ -1,7 +1,6 @@
 #pragma once
 
 #include "assembler.hpp"
-#include "lexer.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -77,7 +76,7 @@ CFG_TEST(lexer_test) {
 		src_str << line << std::endl;
 	}
 
-	std::vector<Token> generated_tokens = lex(src_str.str());
+	std::vector<Token> generated_tokens = lex(src_str.str()).tokens;
 
 	std::vector<Token> expected_tokens = {
 		{ Token::Type::DIRECTIVE,	".org" },
@@ -115,4 +114,13 @@ CFG_TEST(lexer_test) {
 	};
 
 	EXPECT_MATCH(generated_tokens, expected_tokens);
+}
+
+CFG_TEST(AST_is_built_correctly) {
+	std::ifstream src("../../../assembler/tests/programs/tokens.asm");
+	std::string line;
+	std::stringstream src_str;
+	while (getline(src, line)) {
+		src_str << line << std::endl;
+	}
 }
