@@ -51,7 +51,7 @@
 #define EXPECT_MATCH(VECA, VECB) \
 	{\
 		if (VECA.size() != VECB.size()) { \
-			failures << "\tsize of " << #VECA << " and " << #VECB << " do not match" << std::endl; \
+			failures << "\tsize of " << #VECA << " and " << #VECB << " do not match. Got " << VECA.size() << " and " << VECB.size() << std::endl; \
 			success = false; \
 		} else { \
 			for (int i=0; i<VECA.size(); i++) { \
@@ -76,22 +76,22 @@ CFG_TEST(lexer_test) {
 		src_str << line << std::endl;
 	}
 
-	std::vector<Token> generated_tokens = lex(src_str.str()).tokens;
+	std::vector<Token> generated_tokens = lex(src_str.str());
 
 	std::vector<Token> expected_tokens = {
 		{ Token::Type::DIRECTIVE,	".org" },
 		{ Token::Type::OPERAND,		"$8000" },
 		{ Token::Type::SYMBOL,		"VALUE" },
-		{ Token::Type::EQUAL_SIGN,	"=" },
+		// { Token::Type::EQUAL_SIGN,	"=" },
 		{ Token::Type::OPERAND,		"$AA" },
 		{ Token::Type::SYMBOL,		"CONST" },
-		{ Token::Type::EQUAL_SIGN,	"=" },
+		// { Token::Type::EQUAL_SIGN,	"=" },
 		{ Token::Type::OPERAND,		"$00" },
 		{ Token::Type::SYMBOL,		"VAR" },
-		{ Token::Type::EQUAL_SIGN,	"=" },
+		// { Token::Type::EQUAL_SIGN,	"=" },
 		{ Token::Type::OPERAND,		"$0000" },
 		{ Token::Type::SYMBOL,		"symbol" },
-		{ Token::Type::EQUAL_SIGN,	"=" },
+		// { Token::Type::EQUAL_SIGN,	"=" },
 		{ Token::Type::OPERAND,		"gj53i0e[}{\\" },
 		{ Token::Type::INSTRUCTION,	"jsr" },
 		{ Token::Type::OPERAND,		"main" },
@@ -111,8 +111,13 @@ CFG_TEST(lexer_test) {
 		{ Token::Type::DIRECTIVE,	".org" },
 		{ Token::Type::OPERAND,		"VAR" },
 		{ Token::Type::LABEL,		"end" },
+		{ Token::Type::DIRECTIVE,	".end" },
 	};
 
+	for (auto& t : generated_tokens) {
+		std::cout << t << std::endl;
+	}
+	
 	EXPECT_MATCH(generated_tokens, expected_tokens);
 }
 
@@ -123,4 +128,9 @@ CFG_TEST(AST_is_built_correctly) {
 	while (getline(src, line)) {
 		src_str << line << std::endl;
 	}
+
+	std::vector<Token> tokens = lex(src_str.str());
+	ASTNode ast = build_ast(tokens);
+
+	TODO();
 }

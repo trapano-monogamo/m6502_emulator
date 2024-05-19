@@ -18,4 +18,4 @@ loop:	sta	$00,x
 
 sub:	.org	VAR	; something something
 
-end:	; well... the program will just carry on reading whatever is in memory, and it will probably make a mess
+end:	.end

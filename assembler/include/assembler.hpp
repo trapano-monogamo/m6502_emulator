@@ -4,7 +4,7 @@
 
 #include "types.hpp"
 
-lexer_results lex(const std::string& input);
+std::vector<Token> lex(const std::string& input);
 ASTNode build_ast(std::vector<Token>& tokens);
 void assemble(const char* filepath);
 

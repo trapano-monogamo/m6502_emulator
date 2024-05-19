@@ -76,10 +76,11 @@ bool is_delimiter(char c) {
 	return false;
 }
 
-lexer_results lex(const std::string& input) {
+std::vector<Token> lex(const std::string& input) {
 	std::vector<Token> tokens{};
 	std::string current_token{};
 	Token::Type current_type = Token::Type::NONE;
+	Token* prev = nullptr;
 
 	int line_number = 0;
 	bool comment = false;
@@ -105,11 +106,15 @@ lexer_results lex(const std::string& input) {
 
 			if (c == '=') {
 				if (!current_token.empty()) {
-					tokens.push_back(Token{ Token::Type::SYMBOL, current_token });
-					current_token.clear();
+					current_type = Token::Type::SYMBOL;
+				} else {
+					if (prev == nullptr) {
+						std::cout << "ERROR: unexpected token '='" << std::endl;
+						return tokens;
+					} else if (prev->type != Token::Type::NONE) {
+						prev->type = Token::Type::SYMBOL;
+					}
 				}
-				current_type = Token::Type::EQUAL_SIGN;
-				current_token = "=";
 			}
 			if (c == ':') {
 				current_type = Token::Type::LABEL;
@@ -130,6 +135,7 @@ lexer_results lex(const std::string& input) {
 
 			if (!current_token.empty()) {
 				tokens.push_back(Token{ current_type, current_token });
+				prev = &tokens[tokens.size() - 1];
 				current_token.clear();
 			}
 
@@ -137,17 +143,7 @@ lexer_results lex(const std::string& input) {
 		}
 	}
 
-	// second pass because I can't be bothered to fix the previous loop for now...
-	Token* prev = nullptr;
-	for (auto& t : tokens) {
-		if (t.value == "=" && prev != nullptr) {
-			prev->type = Token::Type::SYMBOL;
-			t.type = Token::Type::EQUAL_SIGN;
-		}
-		prev = &t;
-	}
-
-	return { tokens, build_ast(tokens) };
+	return tokens;
 }
 
 
@@ -155,15 +151,9 @@ lexer_results lex(const std::string& input) {
 
 
 ASTNode build_ast(std::vector<Token>& tokens) {
-	// default location of the program in memory. The .org directive overrites this default
-	word zero_addr = 0x0000;
+	// default location of the program in memory. The .org directive overrides this default
+	word prog_start_addr = 0x0000;
 	std::unordered_map<std::string, word> subroutines{};
-
-	/* !!! TODO: consider removing the EQUAL_SIGN tokens from the results of the
-	 *           lexer. They are necessary to recognize assignments, but once the
-	 *           token type is deduced, a symbol already expects an operand, so the
-	 *           equal sign doesn't add any information
-	 */
 
 	ASTNode root{};
 	ASTNode* current = &root;
@@ -192,9 +182,6 @@ ASTNode build_ast(std::vector<Token>& tokens) {
 			case ty::SYMBOL:
 			{} break;
 
-			case ty::EQUAL_SIGN:
-			{} break;
-
 			case ty::OPERAND:
 			{} break;
 
@@ -207,4 +194,6 @@ ASTNode build_ast(std::vector<Token>& tokens) {
 			} break;
 		}
 	}
+
+	return root;
 }
